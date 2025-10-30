@@ -5,6 +5,7 @@ import morgan from 'morgan';
 import dotenv from 'dotenv';
 import routes from './routes/index.js';
 import { errorHandler, requestLogger } from './middleware/index.js';
+import { testDatabaseConnection, disconnectDatabase, getDatabaseInfo } from './config/database.js';
 
 // Load environment variables
 dotenv.config();
@@ -44,23 +45,47 @@ app.get('/', (req, res) => {
 // Error handling (must be last)
 app.use(errorHandler);
 
-// Start server
-app.listen(PORT, () => {
-  console.log('🚀 Tech Spec Generator API Server');
-  console.log(`📡 Server running on http://localhost:${PORT}`);
-  console.log(`🌐 Accepting requests from: ${FRONTEND_URL}`);
-  console.log(`🏥 Health check: http://localhost:${PORT}/api/health`);
-  console.log(`📝 Environment: ${process.env.NODE_ENV || 'development'}`);
-});
+// Start server with database connection check
+async function startServer() {
+  try {
+    // Test database connection
+    console.log('🔌 Connecting to database...');
+    const dbConnected = await testDatabaseConnection();
+    
+    if (!dbConnected) {
+      console.error('⚠️ Failed to connect to database. Server will start but database operations may fail.');
+    }
+
+    const dbInfo = getDatabaseInfo();
+    console.log('📊 Database info:', dbInfo);
+
+    // Start HTTP server
+    app.listen(PORT, () => {
+      console.log('🚀 Tech Spec Generator API Server');
+      console.log(`📡 Server running on http://localhost:${PORT}`);
+      console.log(`🌐 Accepting requests from: ${FRONTEND_URL}`);
+      console.log(`🏥 Health check: http://localhost:${PORT}/api/health`);
+      console.log(`📝 Environment: ${process.env.NODE_ENV || 'development'}`);
+    });
+  } catch (error) {
+    console.error('Failed to start server:', error);
+    process.exit(1);
+  }
+}
+
+// Start the server
+startServer();
 
 // Graceful shutdown
-process.on('SIGTERM', () => {
+process.on('SIGTERM', async () => {
   console.log('SIGTERM signal received: closing HTTP server');
+  await disconnectDatabase();
   process.exit(0);
 });
 
-process.on('SIGINT', () => {
+process.on('SIGINT', async () => {
   console.log('SIGINT signal received: closing HTTP server');
+  await disconnectDatabase();
   process.exit(0);
 });
 

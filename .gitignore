@@ -9,6 +9,9 @@ dist/
 .env.local
 .env.*.local
 
+# Google Cloud credentials
+keys/
+
 # Logs
 logs
 *.log
@@ -30,4 +33,3 @@ coverage/
 # Temporary files
 *.tmp
 .cache
-

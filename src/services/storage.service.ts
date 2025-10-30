@@ -1,50 +1,109 @@
 import type { ChatSession } from '../types/index.js';
+import { prisma } from '../config/database.js';
 
 /**
  * Storage service for chat sessions
- * Currently uses in-memory storage. Can be extended to use file system or database.
+ * Uses PostgreSQL database via Prisma ORM for persistent storage
  */
 class StorageService {
-  private sessions: Map<string, ChatSession>;
-
-  constructor() {
-    this.sessions = new Map();
-  }
-
   /**
-   * Save a chat session
+   * Save a chat session (creates new or updates existing)
    */
   async saveSession(session: ChatSession): Promise<void> {
-    this.sessions.set(session.sessionId, session);
-    console.log(`Saved session ${session.sessionId} with ${session.messages.length} messages`);
+    try {
+      await prisma.chatSession.upsert({
+        where: { sessionId: session.sessionId },
+        update: {
+          messages: session.messages as any,
+          timestamp: new Date(session.timestamp),
+          metadata: session.metadata as any,
+        },
+        create: {
+          sessionId: session.sessionId,
+          messages: session.messages as any,
+          timestamp: new Date(session.timestamp),
+          metadata: session.metadata as any,
+        },
+      });
+      console.log(`Saved session ${session.sessionId} with ${session.messages.length} messages`);
+    } catch (error) {
+      console.error(`Failed to save session ${session.sessionId}:`, error);
+      throw new Error('Failed to save chat session');
+    }
   }
 
   /**
    * Get a chat session by ID
    */
   async getSession(sessionId: string): Promise<ChatSession | null> {
-    return this.sessions.get(sessionId) || null;
+    try {
+      const session = await prisma.chatSession.findUnique({
+        where: { sessionId },
+      });
+
+      if (!session) {
+        return null;
+      }
+
+      return {
+        sessionId: session.sessionId,
+        messages: session.messages as any,
+        timestamp: session.timestamp.toISOString(),
+        metadata: session.metadata as any,
+      };
+    } catch (error) {
+      console.error(`Failed to get session ${sessionId}:`, error);
+      return null;
+    }
   }
 
   /**
    * Get all sessions
    */
   async getAllSessions(): Promise<ChatSession[]> {
-    return Array.from(this.sessions.values());
+    try {
+      const sessions = await prisma.chatSession.findMany({
+        orderBy: { timestamp: 'desc' },
+      });
+
+      return sessions.map(session => ({
+        sessionId: session.sessionId,
+        messages: session.messages as any,
+        timestamp: session.timestamp.toISOString(),
+        metadata: session.metadata as any,
+      }));
+    } catch (error) {
+      console.error('Failed to get all sessions:', error);
+      return [];
+    }
   }
 
   /**
    * Delete a session
    */
   async deleteSession(sessionId: string): Promise<boolean> {
-    return this.sessions.delete(sessionId);
+    try {
+      await prisma.chatSession.delete({
+        where: { sessionId },
+      });
+      console.log(`Deleted session ${sessionId}`);
+      return true;
+    } catch (error) {
+      console.error(`Failed to delete session ${sessionId}:`, error);
+      return false;
+    }
   }
 
   /**
    * Get session count
    */
-  getSessionCount(): number {
-    return this.sessions.size;
+  async getSessionCount(): Promise<number> {
+    try {
+      return await prisma.chatSession.count();
+    } catch (error) {
+      console.error('Failed to get session count:', error);
+      return 0;
+    }
   }
 }
 

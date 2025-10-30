@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 import type { SaveChatRequest, SaveChatResponse } from '../types/index.js';
 import { storageService } from '../services/storage.service.js';
+import { prisma } from '../config/database.js';
 
 /**
  * Controller for chat-related endpoints
@@ -117,13 +118,31 @@ export const getAllChatSessions = async (req: Request, res: Response): Promise<v
  * Health check endpoint
  * GET /api/health
  */
-export const healthCheck = (req: Request, res: Response): void => {
-  res.json({
+export const healthCheck = async (req: Request, res: Response): Promise<void> => {
+  let dbHealthy = false;
+  let sessionCount = 0;
+
+  try {
+    // Test database connection
+    await prisma.$queryRaw`SELECT 1`;
+    dbHealthy = true;
+    sessionCount = await storageService.getSessionCount();
+  } catch (error) {
+    console.error('Database health check failed:', error);
+  }
+
+  const healthData = {
     success: true,
-    status: 'healthy',
+    status: dbHealthy ? 'healthy' : 'degraded',
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
-    sessionCount: storageService.getSessionCount(),
-  });
+    database: {
+      connected: dbHealthy,
+      sessionCount,
+    },
+    environment: process.env.NODE_ENV || 'development',
+  };
+
+  res.status(dbHealthy ? 200 : 503).json(healthData);
 };
 
