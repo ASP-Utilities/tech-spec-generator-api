@@ -15,11 +15,11 @@ export const saveChatSession = async (req: Request, res: Response): Promise<void
     const { sessionId, messages, timestamp } = req.body as SaveChatRequest;
 
     // Validation
-    if (!sessionId || !messages || !Array.isArray(messages)) {
+    if (!messages || !Array.isArray(messages)) {
       res.status(400).json({
         success: false,
         error: 'Invalid request',
-        message: 'sessionId and messages array are required',
+        message: 'messages array is required',
       });
       return;
     }
@@ -33,16 +33,19 @@ export const saveChatSession = async (req: Request, res: Response): Promise<void
       return;
     }
 
+    // Generate sessionId if not provided
+    const finalSessionId = sessionId || `chat-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+
     // Save the session
     await storageService.saveSession({
-      sessionId,
+      sessionId: finalSessionId,
       messages,
       timestamp: timestamp || new Date().toISOString(),
     });
 
     const response: SaveChatResponse = {
       success: true,
-      sessionId,
+      sessionId: finalSessionId,
       message: 'Chat session saved successfully',
     };
 
