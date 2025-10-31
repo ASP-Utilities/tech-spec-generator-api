@@ -1,7 +1,6 @@
 import type { Request, Response } from 'express';
 import type { SaveChatRequest, SaveChatResponse } from '../types/index.js';
 import { storageService } from '../services/storage.service.js';
-import { prisma } from '../config/database.js';
 
 /**
  * Controller for chat-related endpoints
@@ -123,10 +122,10 @@ export const healthCheck = async (req: Request, res: Response): Promise<void> =>
   let sessionCount = 0;
 
   try {
-    // Test database connection
-    await prisma.$queryRaw`SELECT 1`;
-    dbHealthy = true;
+    // Test database by attempting to count sessions
+    // If this succeeds, the database connection is healthy
     sessionCount = await storageService.getSessionCount();
+    dbHealthy = true;
   } catch (error) {
     console.error('Database health check failed:', error);
   }
