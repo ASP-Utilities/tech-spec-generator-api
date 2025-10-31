@@ -1,4 +1,5 @@
 import { SecretManagerServiceClient } from '@google-cloud/secret-manager';
+import logger from '../config/logger.js';
 
 /**
  * Google Secrets Manager Service
@@ -23,9 +24,9 @@ class SecretsService {
     if (this.isProduction) {
       try {
         this.client = new SecretManagerServiceClient();
-        console.log('🔐 Google Secret Manager initialized');
+        logger.info('Google Secret Manager initialized');
       } catch (error) {
-        console.error('Failed to initialize Secret Manager:', error);
+        logger.error({ context: { error } }, 'Failed to initialize Secret Manager');
       }
     }
   }
@@ -40,7 +41,7 @@ class SecretsService {
     if (!this.isProduction) {
       const value = process.env[secretName];
       if (!value) {
-        console.warn(`⚠️ Secret '${secretName}' not found in environment variables`);
+        logger.warn({ context: { secretName } }, 'Secret not found in environment variables');
       }
       return value || null;
     }
@@ -53,7 +54,7 @@ class SecretsService {
 
     // Retrieve from Secret Manager
     if (!this.client || !this.projectId) {
-      console.error('Secret Manager client not initialized or project ID missing');
+      logger.error('Secret Manager client not initialized or project ID missing');
       return null;
     }
 
@@ -67,13 +68,13 @@ class SecretsService {
       if (secretValue) {
         // Cache the secret
         this.secretsCache.set(cacheKey, secretValue);
-        console.log(`✅ Retrieved secret: ${secretName}`);
+        logger.info({ context: { secretName } }, 'Retrieved secret');
         return secretValue;
       }
 
       return null;
     } catch (error) {
-      console.error(`Failed to retrieve secret '${secretName}':`, error);
+      logger.error({ context: { secretName, error } }, 'Failed to retrieve secret');
       return null;
     }
   }
@@ -99,7 +100,7 @@ class SecretsService {
    */
   clearCache(): void {
     this.secretsCache.clear();
-    console.log('🧹 Secrets cache cleared');
+    logger.info('Secrets cache cleared');
   }
 
   /**

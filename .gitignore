@@ -9,6 +9,9 @@ dist/
 .env.local
 .env.*.local
 
+# NPM authentication
+.npmrc
+
 # Google Cloud credentials
 keys/
 

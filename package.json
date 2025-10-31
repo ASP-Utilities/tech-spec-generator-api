@@ -5,7 +5,7 @@
   "main": "dist/index.js",
   "type": "module",
   "scripts": {
-    "dev": "tsx watch src/index.ts",
+    "dev": "tsx watch src/index.ts | pino-pretty",
     "build": "tsc",
     "start": "node dist/index.js",
     "type-check": "tsc --noEmit",
@@ -23,6 +23,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "@asp-utilities/tooling-node-logger": "^1.1.0",
     "@google-cloud/secret-manager": "^6.1.1",
     "@prisma/client": "^6.18.0",
     "cors": "^2.8.5",
@@ -44,6 +45,7 @@
     "@vitest/coverage-v8": "^4.0.6",
     "@vitest/ui": "^4.0.6",
     "better-sqlite3": "^12.4.1",
+    "pino-pretty": "^13.1.2",
     "prisma": "^6.18.0",
     "supertest": "^7.1.4",
     "tsx": "^4.7.0",

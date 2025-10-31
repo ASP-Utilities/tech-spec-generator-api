@@ -1,6 +1,7 @@
 import swaggerJsdoc from 'swagger-jsdoc';
 import { writeFileSync } from 'fs';
 import path from 'path';
+import logger from './logger.js';
 
 const options: swaggerJsdoc.Options = {
   definition: {
@@ -195,7 +196,7 @@ export const swaggerSpec = swaggerJsdoc(options);
 // Export spec to JSON file
 const specPath = path.join(process.cwd(), 'techspecgen_swagger.json');
 writeFileSync(specPath, JSON.stringify(swaggerSpec, null, 2));
-console.log(`📄 Swagger spec exported to: ${specPath}`);
+logger.info({ context: { specPath } }, 'Swagger spec exported');
 
 export default swaggerSpec;
 

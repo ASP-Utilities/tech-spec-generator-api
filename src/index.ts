@@ -8,6 +8,7 @@ import routes from './routes/index.js';
 import { errorHandler, requestLogger } from './middleware/index.js';
 import { testDatabaseConnection, disconnectDatabase, getDatabaseInfo } from './config/database.js';
 import swaggerSpec from './config/swagger.js';
+import logger from './config/logger.js';
 
 // Load environment variables
 dotenv.config();
@@ -37,7 +38,7 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
 app.use('/api', routes);
 
 // Root endpoint
-app.get('/', (req, res) => {
+app.get('/', (_req, res) => {
   res.json({
     message: 'Tech Spec Generator API',
     version: '1.0.0',
@@ -58,26 +59,26 @@ app.use(errorHandler);
 async function startServer() {
   try {
     // Test database connection
-    console.log('🔌 Connecting to database...');
+    logger.info('Connecting to database...');
     const dbConnected = await testDatabaseConnection();
     
     if (!dbConnected) {
-      console.error('⚠️ Failed to connect to database. Server will start but database operations may fail.');
+      logger.warn('Failed to connect to database. Server will start but database operations may fail.');
     }
 
     const dbInfo = getDatabaseInfo();
-    console.log('📊 Database info:', dbInfo);
+    logger.info({ context: { databaseInfo: dbInfo } }, 'Database configuration loaded');
 
     // Start HTTP server
     app.listen(PORT, () => {
-      console.log('🚀 Tech Spec Generator API Server');
-      console.log(`📡 Server running on http://localhost:${PORT}`);
-      console.log(`🌐 Accepting requests from: ${FRONTEND_URL}`);
-      console.log(`🏥 Health check: http://localhost:${PORT}/api/health`);
-      console.log(`📝 Environment: ${process.env.NODE_ENV || 'development'}`);
+      logger.info({ context: { port: PORT, frontendUrl: FRONTEND_URL } }, 'Tech Spec Generator API Server started');
+      logger.info(`Server running on http://localhost:${PORT}`);
+      logger.info(`Accepting requests from: ${FRONTEND_URL}`);
+      logger.info(`Health check: http://localhost:${PORT}/api/health`);
+      logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
     });
   } catch (error) {
-    console.error('Failed to start server:', error);
+    logger.fatal({ context: { error } }, 'Failed to start server');
     process.exit(1);
   }
 }
@@ -87,13 +88,13 @@ startServer();
 
 // Graceful shutdown
 process.on('SIGTERM', async () => {
-  console.log('SIGTERM signal received: closing HTTP server');
+  logger.info('SIGTERM signal received: closing HTTP server');
   await disconnectDatabase();
   process.exit(0);
 });
 
 process.on('SIGINT', async () => {
-  console.log('SIGINT signal received: closing HTTP server');
+  logger.info('SIGINT signal received: closing HTTP server');
   await disconnectDatabase();
   process.exit(0);
 });

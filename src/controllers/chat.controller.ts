@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 import type { SaveChatRequest, SaveChatResponse } from '../types/index.js';
 import { storageService } from '../services/storage.service.js';
+import logger from '../config/logger.js';
 
 /**
  * Controller for chat-related endpoints
@@ -100,7 +101,10 @@ export const saveChatSession = async (req: Request, res: Response): Promise<void
 
     res.status(201).json(response);
   } catch (error) {
-    console.error('Error saving chat session:', error);
+    logger.error(
+      { context: { error: error instanceof Error ? error.message : 'Unknown error' } },
+      'Error saving chat session'
+    );
     res.status(500).json({
       success: false,
       error: 'Failed to save chat session',
@@ -170,7 +174,10 @@ export const getChatSession = async (req: Request, res: Response): Promise<void>
       data: session,
     });
   } catch (error) {
-    console.error('Error fetching chat session:', error);
+    logger.error(
+      { context: { sessionId: req.params.sessionId, error: error instanceof Error ? error.message : 'Unknown error' } },
+      'Error fetching chat session'
+    );
     res.status(500).json({
       success: false,
       error: 'Failed to fetch chat session',
@@ -212,7 +219,7 @@ export const getChatSession = async (req: Request, res: Response): Promise<void>
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-export const getAllChatSessions = async (req: Request, res: Response): Promise<void> => {
+export const getAllChatSessions = async (_req: Request, res: Response): Promise<void> => {
   try {
     const sessions = await storageService.getAllSessions();
 
@@ -222,7 +229,10 @@ export const getAllChatSessions = async (req: Request, res: Response): Promise<v
       data: sessions,
     });
   } catch (error) {
-    console.error('Error fetching all chat sessions:', error);
+    logger.error(
+      { context: { error: error instanceof Error ? error.message : 'Unknown error' } },
+      'Error fetching all chat sessions'
+    );
     res.status(500).json({
       success: false,
       error: 'Failed to fetch chat sessions',
@@ -252,7 +262,7 @@ export const getAllChatSessions = async (req: Request, res: Response): Promise<v
  *             schema:
  *               $ref: '#/components/schemas/HealthResponse'
  */
-export const healthCheck = async (req: Request, res: Response): Promise<void> => {
+export const healthCheck = async (_req: Request, res: Response): Promise<void> => {
   let dbHealthy = false;
   let sessionCount = 0;
 
@@ -262,7 +272,10 @@ export const healthCheck = async (req: Request, res: Response): Promise<void> =>
     sessionCount = await storageService.getSessionCount();
     dbHealthy = true;
   } catch (error) {
-    console.error('Database health check failed:', error);
+    logger.error(
+      { context: { error: error instanceof Error ? error.message : 'Unknown error' } },
+      'Database health check failed'
+    );
   }
 
   const healthData = {

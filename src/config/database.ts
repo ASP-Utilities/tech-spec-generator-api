@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import logger from './logger.js';
 
 /**
  * Database configuration for Tech Spec Generator API
@@ -20,10 +21,10 @@ export async function testDatabaseConnection(): Promise<boolean> {
   try {
     await prisma.$connect();
     await prisma.$queryRaw`SELECT 1`;
-    console.log('✅ Database connection successful');
+    logger.info('Database connection successful');
     return true;
   } catch (error) {
-    console.error('❌ Database connection failed:', error);
+    logger.error({ context: { error } }, 'Database connection failed');
     return false;
   }
 }
@@ -34,9 +35,9 @@ export async function testDatabaseConnection(): Promise<boolean> {
 export async function disconnectDatabase(): Promise<void> {
   try {
     await prisma.$disconnect();
-    console.log('🔌 Database disconnected');
+    logger.info('Database disconnected');
   } catch (error) {
-    console.error('Error disconnecting from database:', error);
+    logger.error({ context: { error } }, 'Error disconnecting from database');
   }
 }
 

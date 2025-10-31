@@ -1,5 +1,6 @@
 import type { ChatSession } from '../types/index.js';
 import { prisma } from '../config/database.js';
+import logger from '../config/logger.js';
 
 /**
  * Storage service for chat sessions
@@ -25,9 +26,15 @@ class StorageService {
           metadata: session.metadata as any,
         },
       });
-      console.log(`Saved session ${session.sessionId} with ${session.messages.length} messages`);
+      logger.info(
+        { context: { sessionId: session.sessionId, messageCount: session.messages.length } },
+        'Saved chat session'
+      );
     } catch (error) {
-      console.error(`Failed to save session ${session.sessionId}:`, error);
+      logger.error(
+        { context: { sessionId: session.sessionId, error } },
+        'Failed to save session'
+      );
       throw new Error('Failed to save chat session');
     }
   }
@@ -52,7 +59,7 @@ class StorageService {
         metadata: session.metadata as any,
       };
     } catch (error) {
-      console.error(`Failed to get session ${sessionId}:`, error);
+      logger.error({ context: { sessionId, error } }, 'Failed to get session');
       return null;
     }
   }
@@ -73,7 +80,7 @@ class StorageService {
         metadata: session.metadata as any,
       }));
     } catch (error) {
-      console.error('Failed to get all sessions:', error);
+      logger.error({ context: { error } }, 'Failed to get all sessions');
       return [];
     }
   }
@@ -86,10 +93,10 @@ class StorageService {
       await prisma.chatSession.delete({
         where: { sessionId },
       });
-      console.log(`Deleted session ${sessionId}`);
+      logger.info({ context: { sessionId } }, 'Deleted session');
       return true;
     } catch (error) {
-      console.error(`Failed to delete session ${sessionId}:`, error);
+      logger.error({ context: { sessionId, error } }, 'Failed to delete session');
       return false;
     }
   }
@@ -101,7 +108,7 @@ class StorageService {
     try {
       return await prisma.chatSession.count();
     } catch (error) {
-      console.error('Failed to get session count:', error);
+      logger.error({ context: { error } }, 'Failed to get session count');
       return 0;
     }
   }
