@@ -3,9 +3,11 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
+import swaggerUi from 'swagger-ui-express';
 import routes from './routes/index.js';
 import { errorHandler, requestLogger } from './middleware/index.js';
 import { testDatabaseConnection, disconnectDatabase, getDatabaseInfo } from './config/database.js';
+import swaggerSpec from './config/swagger.js';
 
 // Load environment variables
 dotenv.config();
@@ -25,6 +27,12 @@ app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
 app.use(morgan('dev')); // HTTP request logging
 app.use(requestLogger); // Custom request logging
 
+// API Documentation
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  customSiteTitle: 'Tech Spec Generator API Docs',
+  customfavIcon: '/favicon.ico',
+}));
+
 // Routes
 app.use('/api', routes);
 
@@ -33,6 +41,7 @@ app.get('/', (req, res) => {
   res.json({
     message: 'Tech Spec Generator API',
     version: '1.0.0',
+    documentation: '/api-docs',
     endpoints: {
       health: '/api/health',
       saveChat: 'POST /api/chat/save',
